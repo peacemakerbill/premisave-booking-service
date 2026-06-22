@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: premisave-booking-service
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/premisave-booking
+  redis:
+    host: localhost
+    port: 6379
+
+server:
+  port: 8083
+
+# Service URLs
+auth:
+  service:
+    url: http://localhost:8080
+listing:
+  service:
+    url: http://localhost:8082
+
+# JWT
+jwt:
+  secret: eW91ci12ZXJ5LXNlY3VyZS1qd3Qtc2VjcmV0LWtleS0zMi1ieXRlcyE=
+
+# Rate Limiting
+rate-limit:
+  requests-per-minute: 100
+
+logging:
+  level:
+    com.premisave: DEBUG
