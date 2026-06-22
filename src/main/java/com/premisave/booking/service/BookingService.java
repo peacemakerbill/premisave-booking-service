@@ -34,7 +34,7 @@ public class BookingService {
             throw new RuntimeException("Unable to authenticate user. Please login again.");
         }
 
-        // ====================== FETCH LISTING DETAILS ======================
+        // Fetch listing details from Listing Service
         Object listingObj;
         try {
             listingObj = listingServiceClient.getListingById(request.getListingId(), authorization);
@@ -43,17 +43,12 @@ public class BookingService {
             throw new RuntimeException("Listing not found or unavailable.");
         }
 
-        if (listingObj == null) {
-            throw new RuntimeException("Listing not found.");
-        }
-
-        // Extract data from response (ListingService returns different types based on category)
         @SuppressWarnings("unchecked")
         Map<String, Object> listing = (Map<String, Object>) listingObj;
 
         String ownerId = (String) listing.get("ownerId");
-        BigDecimal price = new BigDecimal(listing.get("price").toString());
-        String listingTitle = (String) listing.get("title");
+        String category = (String) listing.get("category");
+        String title = (String) listing.get("title");
         boolean isPromoted = Boolean.TRUE.equals(listing.get("promoted"));
 
         if (ownerId == null) {
@@ -61,18 +56,20 @@ public class BookingService {
         }
 
         if (!isPromoted) {
-            throw new RuntimeException("This listing is not currently promoted and cannot be booked.");
+            throw new RuntimeException("This listing is not currently promoted.");
         }
 
-        // ====================== AVAILABILITY CHECK ======================
-        boolean isAvailable = isBookingAvailable(request.getListingId(), 
-                                                request.getCheckInDate(), 
-                                                request.getCheckOutDate());
-        if (!isAvailable) {
-            throw new RuntimeException("Selected dates are not available for this listing.");
+        // Route based on listing type
+        if ("SHORT_TERM_RENTAL".equals(category)) {
+            return handleShortTermBooking(request, userId, ownerId, listing, title);
+        } else {
+            return handleInquiry(request, userId, ownerId, category, title);
         }
+    }
 
-        // ====================== CALCULATE TOTAL AMOUNT ======================
+    private BookingResponse handleShortTermBooking(BookingRequest request, String userId, 
+                                                   String ownerId, Map<String, Object> listing, String title) {
+        
         long days = java.time.temporal.ChronoUnit.DAYS.between(
                 request.getCheckInDate(), request.getCheckOutDate());
         
@@ -80,9 +77,13 @@ public class BookingService {
             throw new RuntimeException("Check-out date must be after check-in date.");
         }
 
+        BigDecimal price = new BigDecimal(listing.get("price").toString());
         BigDecimal totalAmount = price.multiply(BigDecimal.valueOf(days));
 
-        // ====================== CREATE BOOKING ======================
+        if (!isBookingAvailable(request.getListingId(), request.getCheckInDate(), request.getCheckOutDate())) {
+            throw new RuntimeException("Selected dates are not available for this listing.");
+        }
+
         Booking booking = new Booking();
         booking.setUserId(userId);
         booking.setListingId(request.getListingId());
@@ -96,8 +97,8 @@ public class BookingService {
 
         Booking saved = bookingRepository.save(booking);
 
-        log.info("Booking created successfully - BookingId: {}, User: {}, Listing: {}, Amount: {}", 
-                saved.getId(), userId, request.getListingId(), totalAmount);
+        log.info("Short-term booking created - ID: {}, User: {}, Listing: {}", 
+                saved.getId(), userId, request.getListingId());
 
         return new BookingResponse(
                 saved.getId(),
@@ -108,67 +109,64 @@ public class BookingService {
                 saved.getNumberOfGuests(),
                 saved.getTotalAmount(),
                 saved.getCurrency(),
-                "Booking created successfully for " + listingTitle + ". Please proceed to payment."
+                "Short-term booking created for " + title + ". Please proceed to payment."
         );
     }
 
-    /**
-     * Checks if the requested dates overlap with any existing confirmed bookings
-     */
+    private BookingResponse handleInquiry(BookingRequest request, String userId, 
+                                          String ownerId, String category, String title) {
+        
+        Booking inquiry = new Booking();
+        inquiry.setUserId(userId);
+        inquiry.setListingId(request.getListingId());
+        inquiry.setOwnerId(ownerId);
+        inquiry.setCheckInDate(request.getCheckInDate());
+        inquiry.setCheckOutDate(request.getCheckOutDate());
+        inquiry.setNumberOfGuests(request.getNumberOfGuests());
+        inquiry.setTotalAmount(BigDecimal.ZERO);
+        inquiry.setCurrency("KES");
+        inquiry.setStatus(BookingStatus.PENDING);
+
+        Booking saved = bookingRepository.save(inquiry);
+
+        log.info("Inquiry created for {} listing - User: {}, Listing: {}", 
+                category, userId, request.getListingId());
+
+        return new BookingResponse(
+                saved.getId(),
+                saved.getListingId(),
+                saved.getStatus(),
+                saved.getCheckInDate(),
+                saved.getCheckOutDate(),
+                saved.getNumberOfGuests(),
+                BigDecimal.ZERO,
+                "KES",
+                "Interest registered for " + title + ". The homeowner has been notified."
+        );
+    }
+
     private boolean isBookingAvailable(String listingId, LocalDateTime checkIn, LocalDateTime checkOut) {
-        List<Booking> conflictingBookings = bookingRepository
+        List<Booking> conflicts = bookingRepository
                 .findByListingIdAndStatusInAndCheckInDateLessThanEqualAndCheckOutDateGreaterThanEqual(
                         listingId,
                         List.of(BookingStatus.CONFIRMED.name(), BookingStatus.PENDING.name()),
                         checkOut,
                         checkIn
                 );
-
-        return conflictingBookings.isEmpty();
+        return conflicts.isEmpty();
     }
 
     public List<Booking> getMyBookings(String authorization) {
         String userId = jwtUtil.extractUserId(authorization);
-        if (userId == null) {
-            throw new RuntimeException("User not authenticated");
-        }
+        if (userId == null) throw new RuntimeException("User not authenticated");
         return bookingRepository.findByUserId(userId);
     }
 
     public Booking getBookingById(String id, String authorization) {
         String userId = jwtUtil.extractUserId(authorization);
-        if (userId == null) {
-            throw new RuntimeException("User not authenticated");
-        }
+        if (userId == null) throw new RuntimeException("User not authenticated");
 
         return bookingRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Booking not found or access denied"));
-    }
-
-    @Transactional
-    public BookingResponse cancelBooking(String bookingId, String authorization) {
-        String userId = jwtUtil.extractUserId(authorization);
-
-        Booking booking = bookingRepository.findByIdAndUserId(bookingId, userId)
-                .orElseThrow(() -> new RuntimeException("Booking not found or access denied"));
-
-        if (booking.getStatus() == BookingStatus.COMPLETED) {
-            throw new RuntimeException("Cannot cancel a completed booking");
-        }
-
-        booking.setStatus(BookingStatus.CANCELLED);
-        bookingRepository.save(booking);
-
-        return new BookingResponse(
-                booking.getId(),
-                booking.getListingId(),
-                booking.getStatus(),
-                booking.getCheckInDate(),
-                booking.getCheckOutDate(),
-                booking.getNumberOfGuests(),
-                booking.getTotalAmount(),
-                booking.getCurrency(),
-                "Booking cancelled successfully."
-        );
     }
 }

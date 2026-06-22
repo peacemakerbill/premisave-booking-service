@@ -30,16 +30,16 @@ public class FavoriteService {
             throw new RuntimeException("Unable to authenticate user. Please login again.");
         }
 
-        // Check if already favorited
+        // Check if already in favorites
         if (favoriteRepository.existsByUserIdAndListingId(userId, request.getListingId())) {
             return new FavoriteResponse("Already in favorites", true, request.getListingId());
         }
 
-        // Optional: Verify the listing exists and is accessible
+        // Optional: Verify listing exists
         try {
             listingServiceClient.getListingById(request.getListingId(), authorization);
         } catch (Exception e) {
-            log.warn("Warning: Could not verify listing {}: {}", request.getListingId(), e.getMessage());
+            log.warn("Could not verify listing {}: {}", request.getListingId(), e.getMessage());
         }
 
         Favorite favorite = new Favorite();
