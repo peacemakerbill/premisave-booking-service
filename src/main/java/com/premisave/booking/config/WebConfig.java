@@ -2,6 +2,7 @@ package com.premisave.booking.config;
 
 import com.premisave.booking.util.RateLimiterInterceptor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -18,6 +19,22 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(rateLimiterInterceptor)
                 .addPathPatterns("/**")
-                .excludePathPatterns("/public/**", "/health", "/swagger-ui/**", "/v3/api-docs/**");
+                .excludePathPatterns(
+                    "/public/**",
+                    "/health",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**",
+                    "/bookings/payments/mpesa/callback"
+                );
+    }
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOriginPatterns("*")
+                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true)
+                .maxAge(3600);
     }
 }
