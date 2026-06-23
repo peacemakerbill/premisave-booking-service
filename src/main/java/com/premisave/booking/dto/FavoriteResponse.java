@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class FavoriteResponse {
 
     private String message;
-    private boolean success = true;
+    private boolean success;
     private String listingId;
-
+    private String listingTitle;
 }

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -24,4 +25,11 @@ public class BookingRequest {
 
     @Min(value = 1, message = "Number of guests must be at least 1")
     private int numberOfGuests = 1;
+
+    /**
+     * Phone number for M-Pesa payment (Kenyan format: 254XXXXXXXXX).
+     * Required only for SHORT_TERM_RENTAL bookings that need payment.
+     */
+    @Pattern(regexp = "^254[0-9]{9}$", message = "Phone number must be in format 254XXXXXXXXX")
+    private String paymentPhone;
 }
