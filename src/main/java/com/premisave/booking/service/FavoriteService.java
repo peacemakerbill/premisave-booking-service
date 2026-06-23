@@ -25,19 +25,25 @@ public class FavoriteService {
     @Transactional
     public FavoriteResponse addToFavorites(FavoriteRequest request, String authorization) {
         String userId = jwtUtil.extractUserId(authorization);
-
         if (userId == null) {
             throw new RuntimeException("Unable to authenticate user. Please login again.");
         }
 
-        // Check if already in favorites
         if (favoriteRepository.existsByUserIdAndListingId(userId, request.getListingId())) {
-            return new FavoriteResponse("Already in favorites", true, request.getListingId());
+            return FavoriteResponse.builder()
+                    .message("Already in favorites")
+                    .success(true)
+                    .listingId(request.getListingId())
+                    .build();
         }
 
-        // Optional: Verify listing exists
+        // Optional: verify listing exists and grab title
+        String listingTitle = null;
         try {
-            listingServiceClient.getListingById(request.getListingId(), authorization);
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> listing =
+                    (java.util.Map<String, Object>) listingServiceClient.getListingById(request.getListingId(), authorization);
+            listingTitle = (String) listing.get("title");
         } catch (Exception e) {
             log.warn("Could not verify listing {}: {}", request.getListingId(), e.getMessage());
         }
@@ -50,13 +56,17 @@ public class FavoriteService {
 
         log.info("User {} added listing {} to favorites", userId, request.getListingId());
 
-        return new FavoriteResponse("Added to favorites successfully", true, request.getListingId());
+        return FavoriteResponse.builder()
+                .message("Added to favorites successfully")
+                .success(true)
+                .listingId(request.getListingId())
+                .listingTitle(listingTitle)
+                .build();
     }
 
     @Transactional
     public FavoriteResponse removeFromFavorites(String listingId, String authorization) {
         String userId = jwtUtil.extractUserId(authorization);
-
         if (userId == null) {
             throw new RuntimeException("Unable to authenticate user. Please login again.");
         }
@@ -65,16 +75,16 @@ public class FavoriteService {
 
         log.info("User {} removed listing {} from favorites", userId, listingId);
 
-        return new FavoriteResponse("Removed from favorites successfully", true, listingId);
+        return FavoriteResponse.builder()
+                .message("Removed from favorites successfully")
+                .success(true)
+                .listingId(listingId)
+                .build();
     }
 
     public List<Favorite> getMyFavorites(String authorization) {
         String userId = jwtUtil.extractUserId(authorization);
-
-        if (userId == null) {
-            throw new RuntimeException("User not authenticated");
-        }
-
+        if (userId == null) throw new RuntimeException("User not authenticated");
         return favoriteRepository.findByUserId(userId);
     }
 }
