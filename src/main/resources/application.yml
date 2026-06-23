@@ -1,32 +1,82 @@
 spring:
   application:
     name: premisave-booking-service
+
   data:
     mongodb:
-      uri: mongodb://localhost:27017/premisave-booking
-  redis:
-    host: localhost
-    port: 6379
+      uri: ${MONGODB_URI:mongodb://localhost:27017/premisave-booking}
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 300000   # 5 minutes default TTL
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
 
 server:
   port: 8083
 
-# Service URLs
+# ── Service URLs ──
 auth:
   service:
-    url: http://localhost:8080
+    url: ${AUTH_SERVICE_URL:http://localhost:8080}
+
 listing:
   service:
-    url: http://localhost:8082
+    url: ${LISTING_SERVICE_URL:http://localhost:8082}
 
-# JWT
+# ── JWT ──
 jwt:
-  secret: eW91ci12ZXJ5LXNlY3VyZS1qd3Qtc2VjcmV0LWtleS0zMi1ieXRlcyE=
+  secret: ${JWT_SECRET:eW91ci12ZXJ5LXNlY3VyZS1qd3Qtc2VjcmV0LWtleS0zMi1ieXRlcyE=}
 
-# Rate Limiting
+# ── Rate Limiting ──
 rate-limit:
   requests-per-minute: 100
+
+# ── M-Pesa Daraja ──
+# IMPORTANT: callback/confirmation/validation URLs MUST be publicly reachable by Safaricom.
+# Use ngrok or your production domain. localhost will NOT work.
+#
+# Example (ngrok):    MPESA_CALLBACK_URL=https://abc.ngrok.io/bookings/payments/mpesa/callback
+# Example (prod):     MPESA_CALLBACK_URL=https://api.premisave.com/bookings/payments/mpesa/callback
+mpesa:
+  daraja:
+    consumer-key: ${MPESA_CONSUMER_KEY:your_consumer_key_here}
+    consumer-secret: ${MPESA_CONSUMER_SECRET:your_consumer_secret_here}
+    shortcode: ${MPESA_SHORTCODE:174379}
+    passkey: ${MPESA_PASSKEY:your_passkey_here}
+    callback-url: ${MPESA_CALLBACK_URL:https://your-public-domain.com/bookings/payments/mpesa/callback}
+    environment: ${MPESA_ENV:sandbox}
+    # Sandbox base URL
+    base-url: ${MPESA_BASE_URL:https://sandbox.safaricom.co.ke}
+
+# ── Frankfurter (currency conversion) ──
+frankfurter:
+  base-url: ${FRANKFURTER_BASE_URL:https://api.frankfurter.dev}
+
+# ── App ──
+app:
+  booking:
+    # Max days allowed per short-term booking
+    max-stay-days: 90
+    # Grace period in minutes before a PENDING booking is auto-cancelled
+    pending-timeout-minutes: 30
 
 logging:
   level:
     com.premisave: DEBUG
+    org.springframework.data.mongodb: WARN
