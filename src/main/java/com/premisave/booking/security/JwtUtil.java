@@ -5,9 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * Utility for extracting claims from a raw Authorization header value.
- *
- * FIX: Previously always returned null — now delegates to JwtService.
+ * Utility for extracting claims from Authorization header.
+ * Delegates actual JWT parsing to JwtService.
  */
 @Slf4j
 @Component
@@ -17,10 +16,10 @@ public class JwtUtil {
     private final JwtService jwtService;
 
     /**
-     * Extract the userId from an Authorization header value.
+     * Extract userId from Authorization header.
      *
      * @param authorizationHeader e.g. "Bearer eyJhbGci..."
-     * @return userId string, or null if the header is missing/invalid
+     * @return userId or null if invalid/missing
      */
     public String extractUserId(String authorizationHeader) {
         String token = stripBearer(authorizationHeader);
@@ -35,10 +34,10 @@ public class JwtUtil {
     }
 
     /**
-     * Extract the role from an Authorization header value.
+     * Extract role from Authorization header.
      *
      * @param authorizationHeader e.g. "Bearer eyJhbGci..."
-     * @return role string (e.g. "CLIENT"), or null if extraction fails
+     * @return role (e.g. "CLIENT", "OWNER") or null if invalid
      */
     public String extractRole(String authorizationHeader) {
         String token = stripBearer(authorizationHeader);
@@ -52,8 +51,25 @@ public class JwtUtil {
         }
     }
 
-    private String stripBearer(String header) {
-        if (header == null || !header.startsWith("Bearer ")) return null;
-        return header.substring(7);
+    /**
+     * Strips "Bearer " prefix from Authorization header.
+     *
+     * @param header full Authorization header value
+     * @return clean JWT token or null if invalid
+     */
+    public String stripBearer(String header) {
+        if (header == null || !header.startsWith("Bearer ")) {
+            return null;
+        }
+        return header.substring(7).trim();
+    }
+
+    /**
+     * Validates if the token in the Authorization header is valid.
+     */
+    public boolean isTokenValid(String authorizationHeader) {
+        String token = stripBearer(authorizationHeader);
+        if (token == null) return false;
+        return jwtService.isTokenValid(token);
     }
 }

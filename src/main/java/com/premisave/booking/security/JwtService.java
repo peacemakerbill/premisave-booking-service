@@ -31,16 +31,16 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()                    // replaces parserBuilder()
-                .verifyWith(getSignInKey())     // replaces setSigningKey()
+        return Jwts.parser()
+                .verifyWith(getSignInKey())
                 .build()
-                .parseSignedClaims(token)       // replaces parseClaimsJws()
-                .getPayload();                  // replaces getBody()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private SecretKey getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
-        return Keys.hmacShaKeyFor(keyBytes);    // return type is now SecretKey, not Key
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public boolean isTokenValid(String token) {
@@ -57,5 +57,32 @@ public class JwtService {
 
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // PUBLIC METHODS FOR CONTROLLERS (SystemController, etc.)
+    // ──────────────────────────────────────────────────────────────
+
+    /**
+     * Returns the expiration date of the token.
+     * Used by SystemController for /test-token endpoint.
+     */
+    public Date getTokenExpiration(String token) {
+        try {
+            return extractExpiration(token);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Returns all claims as a Map (useful for debugging)
+     */
+    public Claims getAllClaims(String token) {
+        try {
+            return extractAllClaims(token);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
