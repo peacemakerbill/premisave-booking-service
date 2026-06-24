@@ -79,4 +79,4 @@ app:
 logging:
   level:
     com.premisave: DEBUG
-    org.springframework.data.mongodb: WARN
+    org.springframework.data.mongodb: WARN		

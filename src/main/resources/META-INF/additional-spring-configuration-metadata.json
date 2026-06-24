@@ -1,0 +1,37 @@
+{"properties": [
+  {
+    "name": "auth.service.url",
+    "type": "java.lang.String",
+    "description": "A description for 'auth.service.url'"
+  },
+  {
+    "name": "listing.service.url",
+    "type": "java.lang.String",
+    "description": "A description for 'listing.service.url'"
+  },
+  {
+    "name": "rate-limit.requests-per-minute",
+    "type": "java.lang.String",
+    "description": "A description for 'rate-limit.requests-per-minute'"
+  },
+  {
+    "name": "frankfurter.base-url",
+    "type": "java.lang.String",
+    "description": "A description for 'frankfurter.base-url'"
+  },
+  {
+    "name": "app.booking.pending-timeout-minutes",
+    "type": "java.lang.String",
+    "description": "A description for 'app.booking.pending-timeout-minutes'"
+  },
+  {
+    "name": "app.booking.max-stay-days",
+    "type": "java.lang.String",
+    "description": "A description for 'app.booking.max-stay-days'"
+  },
+  {
+    "name": "jwt.secret",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.secret'"
+  }
+]}
