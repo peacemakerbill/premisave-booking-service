@@ -51,7 +51,8 @@ public class RateLimiterInterceptor implements HandlerInterceptor {
         return false;
     }
 
-    private Bucket newBucket(String ip) {
+    @SuppressWarnings("deprecation")
+	private Bucket newBucket(String ip) {
         Refill refill = Refill.intervally(requestsPerMinute, Duration.ofMinutes(1));
         Bandwidth bandwidth = Bandwidth.classic(requestsPerMinute, refill);
         return Bucket.builder().addLimit(bandwidth).build();

@@ -70,7 +70,8 @@ public class MpesaService {
      * @param bookingId Used as the AccountReference
      * @return CheckoutRequestID from Safaricom — store on the booking for callback matching
      */
-    public String initiateStk(String phone, BigDecimal amount, String bookingId) {
+    @SuppressWarnings("rawtypes")
+	public String initiateStk(String phone, BigDecimal amount, String bookingId) {
         String accessToken = getAccessToken();
         String timestamp   = LocalDateTime.now().format(MPESA_TIMESTAMP);
         String password    = buildPassword(timestamp);
@@ -145,7 +146,8 @@ public class MpesaService {
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private String getAccessToken() {
+    @SuppressWarnings("rawtypes")
+	private String getAccessToken() {
         String credentials = Base64.getEncoder().encodeToString(
                 (consumerKey + ":" + consumerSecret).getBytes(StandardCharsets.UTF_8));
 
