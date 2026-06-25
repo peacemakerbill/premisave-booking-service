@@ -84,7 +84,7 @@ public class BookingController {
     // ── Owner endpoints ───────────────────────────────────────────────────────
 
     @GetMapping("/owner/mine")
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasRole('HOME_OWNER')")
     @Operation(summary = "Get all bookings for listings owned by the authenticated owner")
     public ResponseEntity<ApiResponse<List<Booking>>> getMyListingBookings(
             @RequestHeader("Authorization") String authorization) {
@@ -94,7 +94,7 @@ public class BookingController {
     }
 
     @GetMapping("/listing/{listingId}")
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasRole('HOME_OWNER')")
     @Operation(summary = "Get all bookings for a specific listing")
     public ResponseEntity<ApiResponse<List<Booking>>> getBookingsByListing(
             @PathVariable String listingId,

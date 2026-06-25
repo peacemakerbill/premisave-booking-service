@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 
 /**
  * Listing service runs on port 8082 with context-path /api.
- * All endpoints are therefore reachable at http://localhost:8082/api/...
- *
+ * The context-path is already applied by the server, so paths here
+ * must NOT include /api — otherwise requests hit /api/api/...
  */
 @FeignClient(
     name = "listing-service",
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 )
 public interface ListingServiceClient {
 
-    @GetMapping("/api/listings/{id}")
+    @GetMapping("/listings/{id}")
     ListingResponse getListingById(@PathVariable String id,
                                    @RequestHeader("Authorization") String token);
 }
