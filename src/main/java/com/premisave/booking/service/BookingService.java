@@ -3,6 +3,7 @@ package com.premisave.booking.service;
 import com.premisave.booking.client.ListingServiceClient;
 import com.premisave.booking.dto.BookingRequest;
 import com.premisave.booking.dto.BookingResponse;
+import com.premisave.booking.dto.listing_service.ListingResponse;
 import com.premisave.booking.dto.mpesa.MpesaPaymentRequest;
 import com.premisave.booking.entity.Booking;
 import com.premisave.booking.enums.BookingStatus;
@@ -17,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -38,18 +38,19 @@ public class BookingService {
             throw new RuntimeException("Unable to authenticate user. Please login again.");
         }
 
-        Map<String, Object> listing = fetchListing(request.getListingId(), authorization);
+        ListingResponse listing = fetchListing(request.getListingId(), authorization);
 
-        String ownerId  = (String) listing.get("ownerId");
-        String category = (String) listing.get("category");
-        String title    = (String) listing.get("title");
-        boolean isPromoted = Boolean.TRUE.equals(listing.get("promoted"));
+        String ownerId    = listing.getOwnerId();
+        String category   = listing.getCategory();
+        String title      = listing.getTitle();
+        boolean isPromoted = listing.isPromoted();
 
         if (ownerId == null) {
             throw new RuntimeException("Invalid listing: missing owner information.");
         }
+
         if (!isPromoted) {
-            throw new RuntimeException("This listing is not currently promoted.");
+            throw new RuntimeException("This listing is not currently promoted and cannot be booked.");
         }
 
         if ("SHORT_TERM_RENTAL".equals(category)) {
@@ -155,7 +156,6 @@ public class BookingService {
     public List<Booking> getBookingsByListing(String listingId, String authorization) {
         String ownerId = jwtUtil.extractUserId(authorization);
         if (ownerId == null) throw new RuntimeException("User not authenticated");
-        // Ensure the requesting owner actually owns this listing
         List<Booking> bookings = bookingRepository.findByListingId(listingId);
         bookings.forEach(b -> {
             if (!b.getOwnerId().equals(ownerId)) {
@@ -167,18 +167,17 @@ public class BookingService {
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> fetchListing(String listingId, String authorization) {
+    private ListingResponse fetchListing(String listingId, String authorization) {
         try {
-            return (Map<String, Object>) listingServiceClient.getListingById(listingId, authorization);
+            return listingServiceClient.getListingById(listingId, authorization);
         } catch (Exception e) {
-            log.error("Failed to fetch listing {}", listingId, e);
+            log.error("Failed to fetch listing {}: {}", listingId, e.getMessage(), e);
             throw new RuntimeException("Listing not found or unavailable.");
         }
     }
 
     private BookingResponse handleShortTermBooking(BookingRequest request, String userId,
-                                                   String ownerId, Map<String, Object> listing,
+                                                   String ownerId, ListingResponse listing,
                                                    String title) {
         long days = java.time.temporal.ChronoUnit.DAYS.between(
                 request.getCheckInDate(), request.getCheckOutDate());
@@ -191,7 +190,7 @@ public class BookingService {
             throw new RuntimeException("Selected dates are not available for this listing.");
         }
 
-        BigDecimal price       = new BigDecimal(listing.get("price").toString());
+        BigDecimal price       = listing.getPrice();
         BigDecimal totalAmount = price.multiply(BigDecimal.valueOf(days));
 
         Booking booking = new Booking();
@@ -261,7 +260,6 @@ public class BookingService {
     }
 
     private boolean isBookingAvailable(String listingId, LocalDateTime checkIn, LocalDateTime checkOut) {
-        // Param order matches derived method: checkOut → LessThanEqual, checkIn → GreaterThanEqual
         List<Booking> conflicts = bookingRepository
                 .findByListingIdAndStatusInAndCheckInDateLessThanEqualAndCheckOutDateGreaterThanEqual(
                         listingId,
