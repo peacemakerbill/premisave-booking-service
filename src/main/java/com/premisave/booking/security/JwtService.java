@@ -31,11 +31,15 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSignInKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try {
+            return Jwts.parser()                    // Correct for 0.12.6
+                    .verifyWith(getSignInKey())
+                    .build()
+                    .parseSignedClaims(token)       // Correct for 0.12.6
+                    .getPayload();
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid or expired JWT token: " + e.getMessage(), e);
+        }
     }
 
     private SecretKey getSignInKey() {
@@ -59,28 +63,10 @@ public class JwtService {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // PUBLIC METHODS FOR CONTROLLERS (SystemController, etc.)
-    // ──────────────────────────────────────────────────────────────
-
-    /**
-     * Returns the expiration date of the token.
-     * Used by SystemController for /test-token endpoint.
-     */
+    // Used by SystemController
     public Date getTokenExpiration(String token) {
         try {
             return extractExpiration(token);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    /**
-     * Returns all claims as a Map (useful for debugging)
-     */
-    public Claims getAllClaims(String token) {
-        try {
-            return extractAllClaims(token);
         } catch (Exception e) {
             return null;
         }

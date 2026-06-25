@@ -17,6 +17,9 @@ public class JwtUtil {
 
     /**
      * Extract userId from Authorization header.
+     *
+     * @param authorizationHeader e.g. "Bearer eyJhbGci..."
+     * @return userId or null if invalid/missing
      */
     public String extractUserId(String authorizationHeader) {
         String token = stripBearer(authorizationHeader);
@@ -34,6 +37,9 @@ public class JwtUtil {
 
     /**
      * Extract role from Authorization header.
+     *
+     * @param authorizationHeader e.g. "Bearer eyJhbGci..."
+     * @return role (e.g. "CLIENT") or null if invalid
      */
     public String extractRole(String authorizationHeader) {
         String token = stripBearer(authorizationHeader);
@@ -60,6 +66,9 @@ public class JwtUtil {
 
     /**
      * Strips "Bearer " prefix from Authorization header.
+     *
+     * @param header full Authorization header value
+     * @return clean JWT token or null if invalid
      */
     public String stripBearer(String header) {
         if (header == null || !header.startsWith("Bearer ")) {
