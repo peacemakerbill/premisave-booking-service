@@ -35,9 +35,11 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/public/**",
                     "/health",
+                    "/system/health",
+                    "/system/test-token",
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
-                    "/bookings/payments/mpesa/callback"   // Safaricom POSTs here — no auth token
+                    "/bookings/payments/mpesa/callback"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

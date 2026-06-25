@@ -41,32 +41,30 @@ public class SystemController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> testToken(
             @RequestHeader("Authorization") String authorization) {
 
+        Map<String, Object> data = new HashMap<>();
         String token = jwtUtil.stripBearer(authorization);
 
-        Map<String, Object> tokenInfo = new HashMap<>();
-        tokenInfo.put("userId", jwtUtil.extractUserId(authorization));
-        tokenInfo.put("role", jwtUtil.extractRole(authorization));
-        tokenInfo.put("isValid", jwtUtil.isTokenValid(authorization));
-        tokenInfo.put("hasValidToken", token != null);
+        data.put("hasValidToken", token != null);
+        data.put("rawTokenLength", token != null ? token.length() : 0);
 
-        if (token != null) {
-            try {
-                tokenInfo.put("expiresAt", jwtService.getTokenExpiration(token));
-                tokenInfo.put("expiresAtFormatted", jwtService.getTokenExpiration(token) != null 
-                        ? jwtService.getTokenExpiration(token).toString() 
-                        : null);
-                
-                // Optional: Add more detailed claims
-                 tokenInfo.put("claims", jwtService.getAllClaims(token));
-            } catch (Exception e) {
-                tokenInfo.put("parseError", e.getMessage());
-            }
+        if (token == null) {
+            data.put("message", "No Bearer token found in Authorization header");
         } else {
-            tokenInfo.put("message", "No valid Bearer token found in Authorization header");
+            try {
+                data.put("userId", jwtUtil.extractUserId(authorization));
+                data.put("role", jwtUtil.extractRole(authorization));
+                data.put("isValid", jwtUtil.isTokenValid(authorization));
+                data.put("expiresAt", jwtService.getTokenExpiration(token));
+                data.put("expiresAtFormatted", jwtService.getTokenExpiration(token) != null 
+                        ? jwtService.getTokenExpiration(token).toString() : null);
+            } catch (Exception e) {
+                data.put("parsingError", e.getMessage());
+                data.put("errorClass", e.getClass().getSimpleName());
+            }
         }
 
         return ResponseEntity.ok(
-            ApiResponse.success("Token decoded successfully", tokenInfo)
+            ApiResponse.success("Token analysis complete", data)
         );
     }
 }
