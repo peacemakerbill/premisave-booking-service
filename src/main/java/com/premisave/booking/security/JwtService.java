@@ -32,19 +32,42 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) {
         try {
-            return Jwts.parser()                    // Correct for 0.12.6
+            return Jwts.parser()
                     .verifyWith(getSignInKey())
                     .build()
-                    .parseSignedClaims(token)       // Correct for 0.12.6
+                    .parseSignedClaims(token)
                     .getPayload();
         } catch (Exception e) {
             throw new RuntimeException("Invalid or expired JWT token: " + e.getMessage(), e);
         }
     }
 
+    /**
+     * Mirrors auth-service key derivation exactly:
+     * - decode Base64 secret
+     * - if < 32 bytes: zero-pad to 32
+     * - if > 32 bytes: truncate to 32
+     * Auth-service secret decodes to 41 bytes, so this truncates to 32,
+     * matching the key auth-service uses to sign tokens.
+     */
     private SecretKey getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
-        return Keys.hmacShaKeyFor(keyBytes);
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(secret);
+
+            if (keyBytes.length < 32) {
+                byte[] padded = new byte[32];
+                System.arraycopy(keyBytes, 0, padded, 0, keyBytes.length);
+                keyBytes = padded;
+            } else if (keyBytes.length > 32) {
+                byte[] truncated = new byte[32];
+                System.arraycopy(keyBytes, 0, truncated, 0, 32);
+                keyBytes = truncated;
+            }
+
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (Exception e) {
+            return Keys.hmacShaKeyFor(secret.getBytes());
+        }
     }
 
     public boolean isTokenValid(String token) {
@@ -63,7 +86,6 @@ public class JwtService {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    // Used by SystemController
     public Date getTokenExpiration(String token) {
         try {
             return extractExpiration(token);
