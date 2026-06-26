@@ -1,37 +1,105 @@
-{"properties": [
-  {
-    "name": "auth.service.url",
-    "type": "java.lang.String",
-    "description": "A description for 'auth.service.url'"
-  },
-  {
-    "name": "listing.service.url",
-    "type": "java.lang.String",
-    "description": "A description for 'listing.service.url'"
-  },
-  {
-    "name": "rate-limit.requests-per-minute",
-    "type": "java.lang.String",
-    "description": "A description for 'rate-limit.requests-per-minute'"
-  },
-  {
-    "name": "frankfurter.base-url",
-    "type": "java.lang.String",
-    "description": "A description for 'frankfurter.base-url'"
-  },
-  {
-    "name": "app.booking.pending-timeout-minutes",
-    "type": "java.lang.String",
-    "description": "A description for 'app.booking.pending-timeout-minutes'"
-  },
-  {
-    "name": "app.booking.max-stay-days",
-    "type": "java.lang.String",
-    "description": "A description for 'app.booking.max-stay-days'"
-  },
-  {
-    "name": "jwt.secret",
-    "type": "java.lang.String",
-    "description": "A description for 'jwt.secret'"
-  }
-]}
+{
+  "properties": [
+    {
+      "name": "auth.service.url",
+      "type": "java.lang.String",
+      "description": "Base URL of the authentication service."
+    },
+    {
+      "name": "listing.service.url",
+      "type": "java.lang.String",
+      "description": "Base URL of the listing service used for inter-service calls."
+    },
+    {
+      "name": "jwt.secret",
+      "type": "java.lang.String",
+      "description": "Base64-encoded secret key used to sign and verify JWT tokens. Must match across all services."
+    },
+    {
+      "name": "rate-limit.requests-per-minute",
+      "type": "java.lang.Integer",
+      "description": "Maximum number of requests allowed per minute per client before rate limiting kicks in.",
+      "defaultValue": 100
+    },
+    {
+      "name": "mpesa.daraja.consumer-key",
+      "type": "java.lang.String",
+      "description": "M-Pesa Daraja API consumer key."
+    },
+    {
+      "name": "mpesa.daraja.consumer-secret",
+      "type": "java.lang.String",
+      "description": "M-Pesa Daraja API consumer secret."
+    },
+    {
+      "name": "mpesa.daraja.shortcode",
+      "type": "java.lang.String",
+      "description": "M-Pesa business shortcode (paybill or till number).",
+      "defaultValue": "174379"
+    },
+    {
+      "name": "mpesa.daraja.passkey",
+      "type": "java.lang.String",
+      "description": "M-Pesa Lipa Na M-Pesa Online passkey used to generate the STK push password."
+    },
+    {
+      "name": "mpesa.daraja.callback-url",
+      "type": "java.lang.String",
+      "description": "Publicly accessible URL that Safaricom will POST STK push payment callbacks to."
+    },
+    {
+      "name": "mpesa.daraja.environment",
+      "type": "java.lang.String",
+      "description": "Daraja environment to target: 'sandbox' for testing, 'production' for live.",
+      "defaultValue": "sandbox"
+    },
+    {
+      "name": "mpesa.daraja.base-url",
+      "type": "java.lang.String",
+      "description": "Base URL for the Safaricom Daraja API. Defaults to sandbox; override for production.",
+      "defaultValue": "https://sandbox.safaricom.co.ke"
+    },
+    {
+      "name": "frankfurter.base-url",
+      "type": "java.lang.String",
+      "description": "Base URL for the Frankfurter currency exchange rate API.",
+      "defaultValue": "https://api.frankfurter.dev"
+    },
+    {
+      "name": "app.booking.max-stay-days",
+      "type": "java.lang.Integer",
+      "description": "Maximum number of days allowed per short-term booking.",
+      "defaultValue": 90
+    },
+    {
+      "name": "app.booking.pending-timeout-minutes",
+      "type": "java.lang.Integer",
+      "description": "Grace period in minutes before a PENDING booking is automatically cancelled.",
+      "defaultValue": 30
+    }
+  ],
+  "hints": [
+    {
+      "name": "logging.level.values",
+      "values": [
+        {"value": "TRACE"},
+        {"value": "DEBUG"},
+        {"value": "INFO"},
+        {"value": "WARN"},
+        {"value": "ERROR"},
+        {"value": "FATAL"},
+        {"value": "OFF"}
+      ]
+    },
+    {
+      "name": "logging.level.keys",
+      "values": [
+        {"value": "root", "description": "Root logger level."},
+        {"value": "com.premisave", "description": "All Premisave booking application classes."},
+        {"value": "org.springframework.data.mongodb", "description": "MongoDB data layer."},
+        {"value": "org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport", "description": "Suppresses Redis/MongoDB repository conflict warnings."},
+        {"value": "org.springframework.cloud.commons.util.InetUtils", "description": "Suppresses hostname resolution warnings from Spring Cloud."}
+      ]
+    }
+  ]
+}
